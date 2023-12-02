@@ -35,6 +35,20 @@ la R1, U32 {
 
 }
 
+sc R1, R2, (R3) {
+   co= 010010,
+   nwords=1,
+   R1 = reg(25, 21)
+   R2 = reg(20, 16)
+   R3 = reg(15, 11)
+    {
+      # MEM[R3 + 0] <- BR[R1]
+      (T1, SelA = 10101, MR = 0, LC = 1 )
+      #Jump to fetch
+      (A0, B= 0, C = 0)
+         }
+}
+
 registers
 {
     0=(zero,  x0),
