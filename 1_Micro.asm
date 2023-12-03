@@ -112,7 +112,7 @@ addc R1, R2, R3, R4 {  #BR[R1] ← BR[R1] + BR[R3] / BR[R2] ← BR[R2] + BR[R4]
     		}
 }
 
-mulc R1, R2, R3, R4 {  # BR[R1] ← BR[R1] * BR[R3] - BR[R2] * BR[R4] / BR[R2] ← BR[R1] * BR[R4] + BR[R2] * BR[R3]
+mulc R1, R2, R3, R4 {  # BR[R1] ← BR[R1] * BR[R3] - BR[R2] * BR[R4] | BR[R2] ← BR[R1] * BR[R4] + BR[R2] * BR[R3]
    co=  010101,
    nwords=1,
    R1 = reg(25, 21)
@@ -136,8 +136,8 @@ mulc R1, R2, R3, R4 {  # BR[R1] ← BR[R1] * BR[R3] - BR[R2] * BR[R4] / BR[R2] �
      
     #RT1 <- RT3
     (T7, C4)
-    # BR[R1] <- RT1 - RT2
-    (MA, MB = 01, SelCop = 01011, MC, T6, LC, SelC = 10101, MR = 0)
+    # BR[R5] <- RT1 - RT2
+    (MA, MB = 01, SelCop = 01011, MC, T6, LC, SelC = 00101, MR)
      
     
     #RT1 <- BR[R1]
@@ -156,9 +156,14 @@ mulc R1, R2, R3, R4 {  # BR[R1] ← BR[R1] * BR[R3] - BR[R2] * BR[R4] / BR[R2] �
     
     #RT1 <- RT3
     (T7, C4)
-    # BR[R2] <- RT1 + RT2
+    #BR[R2] <- RT1 + RT2
     (MA, MB = 01, SelCop = 01010, MC, T6, LC, SelC = 10000, MR = 0)
-    
+
+    #RT1 <- BR[R5]
+    (MR, SelA = 00101, T9, C4)
+    #BR[R1] <- RT1
+    (T4, MR = 0, SelC = 10101, LC)
+
     #Jump to fetch
     (A0, B= 1, C = 0)
     		}

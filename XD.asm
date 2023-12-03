@@ -6,13 +6,17 @@
 # Begin
 
 begin {
-              # R0 <- 0
-              (EXCODE=0, T11, MR=1, SelC=0, LC=1),
+            # R0 <- 0
+            (EXCODE=0, T11, MR=1, SelC=0, LC=1),
 
-    fetch:    # MAR <- PC
-              # MBR <- Mem[MAR]
-              # IR  <- MBR, PC <- PC + 4
-              # jump to associated microcode for op. code
+    fetch:  # MAR <- PC
+            (T2, C0),
+            # MBR <- Mem[MAR]
+            (TA, R, BW=11, M1=1, C1=1),
+            # IR  <- MBR, PC <- PC + 4
+            (M2, C2, T1, C3),
+            # jump to associated microcode for op. code
+            (A0, B=0, C=0)
 }
 
 
@@ -97,6 +101,36 @@ sw reg1 val(reg2) {
       }
 }
 
+
+la R1, U32 {
+   co= 010001,
+   nwords=2,
+   R1 = reg(25, 21)
+   U32 = inm(63, 32)
+    {
+      #MAR <- PC
+      (T2, C0)
+      #MBR <- MM[MAR]
+      (Ta, R, BW = 11, M1, C1)
+      # PC <- PC + 4
+      (M2 = 1, C2)
+      # BR[R1] <- MBR
+      (T1, SelC = 10101, MR = 0, LC = 1 )
+      #Jump to fetch
+      (A0, B= 1, C = 0)
+         }
+
+}
+
+
+
+
+
+
+
+
+
+
 beq rs1 rs2 offset {
       co=111111,
       nwords=1,
@@ -126,44 +160,162 @@ bck2ftch2: (T5, M7=0, C7),
 
 
 
-beqc  r1 r2 r3 r4 s6 {
-    co = 110100,
-    RR1 = reg(25-21)
-    RR2 = reg(20-16)
-    RR3 = reg(15-11)
-    RR4 = reg(10-6)
-    S6 (5-0)
+sc R1, R2, (R3) {  #MEM[R3+0] ← BR[R1] / MEM[R3+4] ← BR[R2]
+   co= 010010,
+   nwords=1,
+   R1 = reg(25, 21)
+   R2 = reg(20, 16)
+   R3 = reg(15, 11)
     {
+    # MAR <- BR[R3]
+    (SelA = 01011, MR = 0, T9, C0)
+    # MBR <- BR[R1]
+    (SelB = 10101, M1 = 0, T10, C1)
+    # MAR[R1] <- MBR[R3]
+    (Ta, TD, W, BW = 11)
+    #RT1 <- R3
+    (SelA = 01011, MR = 0, T9, C4)
+		# MAR <- RT1 + 4
+    (MA, MB = 10, SelCop = 01010, MC, T6, C0)
+    # MBR <- BR[R2]
+    (SelB = 10000, M1 = 0, T10, C1)
+    # MAR[R2] <- MBR[R3]
+    (Ta, TD, W, BW = 11)   
+    #Jump to fetch
+          (A0, B= 1, C = 0)
+         }
+}
+                 
+lc R1, R2, (R3) {  #BR[R1] ← MEM[R3+0] / BR[RR2] ← MEM[R3+4]
+   co= 010011,
+   nwords=1,
+   R1 = reg(25, 21)
+   R2 = reg(20, 16)
+   R3 = reg(15, 11)
+    {
+    # MAR <- BR[R3]
+    (SelA = 01011, MR = 0, T9, C0)
+    # MBR[R1] <- MAR[R3]
+    (Ta, R, BW = 11, M1, C1)
+    # BR[R1] <- MBR
+		(T1, SelC = 10101, MR = 0, LC = 1 )
+    #RT1 <- R3
+    (SelA = 01011, MR = 0, T9, C4)   
+    # MAR <- RT1 + 4
+    (MA, MB = 10, SelCop = 01010, MC, T6, C0)
+    # MBR[R2] <- MAR[R3]
+    (Ta, R, BW = 11, M1, C1)
+    # BR[R2] <- MBR
+		(T1, SelC = 10000, MR = 0, LC = 1 )
+    #Jump to fetch
+          (A0, B= 1, C = 0)
+    		}
+}
 
-    }
+addc R1, R2, R3, R4 {  #BR[R1] ← BR[R1] + BR[R3] / BR[R2] ← BR[R2] + BR[R4]
+   co=  010100,
+   nwords=1,
+   R1 = reg(25, 21)
+   R2 = reg(20, 16)
+   R3 = reg(15, 11)
+   R4 = reg(10, 6)
+   {
+    #RT1 <- BR[R1]
+    (SelA = 10101, MR = 0, T9, C4)
+    #RT2 <- BR[R3]
+    (SelB = 01011, MR = 0, T10, C5)
+    #BR[R1] <- RT1 + RT2
+    (MA, MB = 01, SelCop = 01010, MC, T6, LC, SelC = 10101, MR = 0)
+    #RT1 <- BR[R2]
+    (SelA = 10000, MR = 0, T9, C4)
+    #RT2 <- BR[R4]
+    (SelB = 00110, MR = 0, T10, C5)
+    #BR[R2] <- RT1 + RT2
+    (MA, MB = 01, SelCop = 01010, MC, T6, LC, SelC = 10000, MR = 0)
+    #Jump to fetch
+    (A0, B= 1, C = 0)
+    		}
+}
+
+mulc R1, R2, R3, R4 {  # BR[R1] ← BR[R1] * BR[R3] - BR[R2] * BR[R4] | BR[R2] ← BR[R1] * BR[R4] + BR[R2] * BR[R3]
+   co=  010101,
+   nwords=1,
+   R1 = reg(25, 21)
+   R2 = reg(20, 16)
+   R3 = reg(15, 11)
+   R4 = reg(10, 6)
+   {
+    #RT1 <- BR[R1]
+    (SelA = 10101, MR = 0, T9, C4)
+    #RT2 <- BR[R3]
+    (SelB = 01011, MR = 0, T10, C5)
+    #RT3 <- RT1 * RT2
+    (MA, MB = 01, SelCop = 01100, MC, C6)
+     
+    #RT1 <- BR[R2]
+    (SelA = 10000, MR = 0, T9, C4)
+    #RT2 <- BR[R4]
+    (SelB = 00110, MR = 0, T10, C5)
+    #RT2 <- RT1 * RT2
+    (MA, MB = 01, SelCop = 01100, MC, T6, C5)
+     
+    #RT1 <- RT3
+    (T7, C4)
+    # BR[R5] <- RT1 - RT2
+    (MA, MB = 01, SelCop = 01011, MC, T6, LC, SelC = 00101, MR)
+     
+    
+    #RT1 <- BR[R1]
+    (SelA = 10101, MR = 0, T9, C4)
+    #RT2 <- BR[R4]
+    (SelB = 00110, MR = 0, T10, C5)
+    #RT3 <- RT1 * RT2
+    (MA, MB = 01, SelCop = 01100, MC, C6)
+    
+    #RT1 <- BR[R2]
+    (SelA = 10000, MR = 0, T9, C4)
+    #RT2 <- BR[R3]
+    (SelB = 01011, MR = 0, T10, C5)
+    #RT2 <- RT1 * RT2
+    (MA, MB = 01, SelCop = 01100, MC, T6, C5)
+    
+    #RT1 <- RT3
+    (T7, C4)
+    #BR[R2] <- RT1 + RT2
+    (MA, MB = 01, SelCop = 01010, MC, T6, LC, SelC = 10000, MR = 0)
+
+    #RT1 <- BR[R5]
+    (MR, SelA = 00101, T9, C4)
+    #BR[R1] <- RT1
+    (T4, MR = 0, SelC = 10101, LC)
+
+    #Jump to fetch
+    (A0, B= 1, C = 0)
+    		}
 }
 
 
 
 
-
-
-
-# TODO
-# call U20 {
-#     co = 100001,
-#     nwords = 1
-#     U20 = inm(19, 0)
-#     {
-#     # MAR <- PC
-#     (T2, C0),
-#     # MBR <- MM[MAR]
-#     (Ta, R, BW = 11, M1, C1),
-#     # PC <- PC + 4
-#     (M2),
-#     # BR[ra] <- PC
-#     (T2, SelC = 00001, LC),
-#     # PC <- U20
-#     (SelC = 10010, MR = 0, T9, M2, C2)
-#     #Jump to fetch
-#     (A0, B= 1, C = 0)
-#     }
-# }
+call U20 {
+    co = 100001,
+    nwords = 1
+    U20 = inm(19, 0)
+    {
+    # MAR <- PC
+    (T2, C0),
+    # MBR <- MM[MAR]
+    (Ta, R, BW = 11, M1, C1),
+    # PC <- PC + 4
+    (M2),
+    # BR[ra] <- PC
+    (T2, SelC = 00001, LC),
+    # PC <- U20
+    (SelC = 10010, MR = 0, T9, M2, C2)
+    #Jump to fetch
+    (A0, B= 1, C = 0)
+    }
+}
 
 
 

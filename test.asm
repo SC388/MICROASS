@@ -10,31 +10,37 @@ b: .word 10, 20
             lw s5, 0(a1)                # load the first part of the complex number b
             lw s6, 4(a1)                # load the second part
             
-            # if (a == b):
-            bne s3 s5 not_equal_no_ext 
-            bne s4 s6 not_equal_no_ext 
-            
-            # Calculate a * b;
-            mul s11 s3 s5               # multiply real parts
-            mul s10 s4 s6               # multiply imaginary parts
-            sub s11 s11 s10             # substract these two parts
 
-            mul s10 s3 s6               # multiply real part of a with imaginary part of b
-            mul s9 s4 s5                # multiply imaginary part of a with real part of b
-            add s10 s10 s9              # add these two parts
+            beq s3 s5 real_eq_noext     # check if the real parts are equal
 
-            mv a0 s11                   # move the result to a0 
-            mv a1 s10                   # and a1 to return it
+                add a0 s3 s5                # add real parts
+                add a1 s4 s6                # add imaginary parts
 
-            ret                         # return a * b;
+                ret                         # return a + b;
 
-            
-            # else
-            not_equal_no_ext: 
-            add a0 s3 s5                # add real parts
-            add a1 s4 s6                # add imaginary parts
+            real_eq_noext:
+            beq s4 s6 imag_eq_noext     # check if the imaginary parts are equal
 
-            ret                         # return a + b;
+                add a0 s3 s5                # add real parts
+                add a1 s4 s6                # add imaginary parts
+
+                ret                         # return a + b;
+
+            imag_eq_noext:              # the complex numbers are equal
+                # Calculate a * b;
+                mul s11 s3 s5               # multiply real parts
+                mul s10 s4 s6               # multiply imaginary parts
+                sub s11 s11 s10             # substract these two parts
+
+                mul s10 s3 s6               # multiply real part of a with imaginary part of b
+                mul s9 s4 s5                # multiply imaginary part of a with real part of b
+                add s10 s10 s9              # add these two parts
+
+                add a0 s11 zero             # move the result to a0 
+                add a1 s10 zero             # and a1 to return it
+
+                ret                         # return
+
 
 
 
@@ -42,26 +48,35 @@ b: .word 10, 20
             # To implement with RISC-V instructions (with extension)
             lc s3, s4, (a0)             # load the complex number a and
             lc s5, s6, (a1)             # b using the new instruction
+
+            beq s3 s5 real_eq_ext     # check if the real parts are equal
+
+                addc s3, s4, s5, s6         # add the two complex numbers using the new instruction
+
+                add a0 s3 zero              # move the results to a0
+                add a1 s4 zero              # and a1 to return them (using add because we dont have mv)
+
+                ret                             # return a + b;
+
+            real_eq_ext:
+            beq s4 s6 imag_eq_ext     # check if the imaginary parts are equal
+
+                addc s3, s4, s5, s6         # add the two complex numbers using the new instruction
+
+                add a0 s3 zero              # move the results to a0
+                add a1 s4 zero              # and a1 to return them (using add because we dont have mv)
+
+                ret                             # return a + b;
+
+            imag_eq_ext:              # the complex numbers are equal
+                # Calculate a * b;
+                mulc s3, s4, s5, s6         # multiply the two complex numbers using the new instruction
             
-            # if (a == b):
-            beqc s3, s4, s5, s6, not_equal_ext 
+                add a0 s3 zero              # move the results to a0
+                add a1 s4 zero              # and a1 to return them (using add because we dont have mv)
 
-            # Calculate a * b;
-            mulc s3, s4, s5, s6         # multiply the two complex numbers using the new instruction
-            
-            add a0 s3 zero              # move the results to a0
-            add a1 s4 zero              # and a1 to return them (using add because we dont have mv)
+                ret               
 
-            ret                     
-
-            # else
-            not_equal_ext:
-            addc s3, s4, s5, s6         # add the two complex numbers using the new instruction
-
-            add a0 s3 zero              # move the results to a0
-            add a1 s4 zero              # and a1 to return them (using add because we dont have mv)
-
-            ret                     
 
 
     main:   rdcycle s0
