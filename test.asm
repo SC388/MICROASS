@@ -34,14 +34,18 @@ b: .word 10, 20
             add a0 s3 s5            # add real parts
             add a1 s4 s6            # add imaginary parts
 
+            addi sp sp -8           # move the stack pointer
+            sw a0 0(sp)             # store the result of a0 
+            sw a1 4(sp)             # and a1 on the stack
+
             ret                     # return a + b;
 
 
 
     with_ext:
             # To implement with RISC-V instructions (with extension)
-            lc s3, s4, (a0)        # load the complex number a
-            lc s5, s6, (a1)        # load the complex number b
+            lc s3, s4, (a0)        # load the complex number a and
+            lc s5, s6, (a1)        # b using the new instruction
             
             # if (a == b):
             beqc s3, s4, s5, s6, not_equal_ext 
@@ -49,13 +53,16 @@ b: .word 10, 20
             # Calculate a * b;
             mulc s3, s4, s5, s6     # multiply the two complex numbers using the new instruction
 
-            ret                     # return a * b;
+            ret                     
 
             # else
             not_equal_ext:
             addc s3, s4, s5, s6     # add the two complex numbers using the new instruction
 
-            ret                     # return a + b;
+            addi sp sp -8           # move the stack pointer
+            sc s3, s4, (sp)         # store the result of the operation using the new instruction
+
+            ret                     
 
 
     main:   rdcycle s0
