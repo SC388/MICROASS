@@ -49,27 +49,17 @@ b: .word 10, 20
             lc s3, s4, (a0)             # load the complex number a and
             lc s5, s6, (a1)             # b using the new instruction
 
-            beq s3 s5 real_eq_ext     # check if the real parts are equal
+            beqc s3 s4 s5 s6 eq_ext     # check if the real parts are equal
 
                 addc s3, s4, s5, s6         # add the two complex numbers using the new instruction
 
                 add a0 s3 zero              # move the results to a0
                 add a1 s4 zero              # and a1 to return them (using add because we dont have mv)
 
-                ret                             # return a + b;
+                ret                         
 
-            real_eq_ext:
-            beq s4 s6 imag_eq_ext     # check if the imaginary parts are equal
-
-                addc s3, s4, s5, s6         # add the two complex numbers using the new instruction
-
-                add a0 s3 zero              # move the results to a0
-                add a1 s4 zero              # and a1 to return them (using add because we dont have mv)
-
-                ret                             # return a + b;
-
-            imag_eq_ext:              # the complex numbers are equal
-                # Calculate a * b;
+            eq_ext:                         # the complex numbers are equal
+                
                 mulc s3, s4, s5, s6         # multiply the two complex numbers using the new instruction
             
                 add a0 s3 zero              # move the results to a0
