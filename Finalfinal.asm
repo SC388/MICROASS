@@ -291,29 +291,29 @@ beqc R1, R2, R3, R4, S6 {  # IF (R1 == R3) AND (R2 == R4): PC ← PC + S6
    R2 = reg(20, 16)
    R3 = reg(15, 11)
    R4 = reg(10, 6) 
-   S6 = address(5,0)rel  
+   S6 = address(5,0)rel
    {
     #MBR <- SR
     (T8, M1 = 0, C1)
     #BR[R1] - BR[R3]
     (SelA = 10101, SelB = 01011, MC , SelCop = 01011, M7, SelP = 11, M7, C7)
     # If R1 != R3, jump to end
-    (A0 = 0, B = 1, C = 110, MADDR=beq11)
+    (A0 = 0, B = 1, C = 110, MADDR=bck2ftch2c)
     #Reset SR                       
     (T1, M7 = 0, C7)    
     #BR[R2] - BR[R4]                    
     (SelA = 10000, SelB = 00110, MC , SelCop = 01011, M7, SelP = 11, M7, C7)
     # If R2 != R4 jump to end
-    (A0 = 0, B = 1, C = 110, MADDR=beq11)
+    (A0 = 0, B = 1, C = 110, MADDR=bck2ftch2c)
     #Reset SR                       
     (T1, M7 = 0, C7) 
-    #PC <- PC + S6
-    (SE = 1, OFFSET = 0, SIZE = 00101, T3, C5)
+    #RT2 <- S6
+    (SE = 1, OFFSET = 0, SIZE = 00110, T3, C5)
     #RT1 <- PC
     (T2, C4)
     #RT1 + RT2:
     (MA, MB = 01, SelCop = 01010, MC, T6, M2 = 0, C2)
-beq11: #MBR <- SR
+bck2ftch2c: #MBR <- SR
     (T1, M7 = 0, C7)
     #Jump to fetch
     (A0, B= 1, C = 0)
