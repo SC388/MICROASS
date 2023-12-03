@@ -40,14 +40,11 @@ b: .word 10, 20
 
     with_ext:
             # To implement with RISC-V instructions (with extension)
-            lw s3, 0(a0)            # load the first part of the complex number a
-            lw s4, 4(a0)            # load the second part
-            lw s5, 0(a1)            # load the first part of the complex number b
-            lw s6, 4(a1)            # load the second part
+            lc s3, s4, (a0)        # load the complex number a
+            lc s5, s6, (a1)        # load the complex number b
             
             # if (a == b):
-            bne s3 s5 not_equal_ext
-            bne s4 s6 not_equal_ext
+            beqc s3, s4, s5, s6, not_equal_ext 
 
             # Calculate a * b;
             mulc s3, s4, s5, s6     # multiply the two complex numbers using the new instruction
