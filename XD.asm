@@ -122,26 +122,18 @@ bck2ftch2: (T5, M7=0, C7),
 # Complex numbers
 #
 
-# la    r1 u32         { ... }
-# sc    r1 r2 (r3)     { ... }
-# lc    r1 r2 (r3)     { ... }
-# addc  r1 r2 r3 r4    { ... }
-# mulc  r1 r2 r3 r4    { ... }
-# beqc  r1 r2 r3 r4 s6 { ... }
 
 
 
 
-
-call U20 {
-    co = 100001,
-    nwords = 1
-    U20 = inm(19, 0)
+beqc  r1 r2 r3 r4 s6 {
+    co = 110100,
+    RR1 = reg(25-21)
+    RR2 = reg(20-16)
+    RR3 = reg(15-11)
+    RR4 = reg(10-6)
+    S6 (5-0)
     {
-    # BR[ra] ← PC
-    (T2, SelC = 00001, LC),
-    # PC ← U20
-    ()
 
     }
 }
@@ -150,11 +142,40 @@ call U20 {
 
 
 
+
+
+# TODO
+# call U20 {
+#     co = 100001,
+#     nwords = 1
+#     U20 = inm(19, 0)
+#     {
+#     # MAR <- PC
+#     (T2, C0),
+#     # MBR <- MM[MAR]
+#     (Ta, R, BW = 11, M1, C1),
+#     # PC <- PC + 4
+#     (M2),
+#     # BR[ra] <- PC
+#     (T2, SelC = 00001, LC),
+#     # PC <- U20
+#     (SelC = 10010, MR = 0, T9, M2, C2)
+#     #Jump to fetch
+#     (A0, B= 1, C = 0)
+#     }
+# }
+
+
+
+
+
 ret {
     co = 100010
     {
-    # PC ← BR[ra] 
+    # PC <- BR[ra] 
     (SelA = 00001, T9, M2 = 0, C2)
+    #Jump to fetch
+    (A0, B= 1, C = 0)
 
     }
 }
@@ -172,6 +193,8 @@ hcf {
         (SelA = 00000, T9, M2 = 0, C2),
         # SR <- 0x00
         (SelA = 00000, SelC = 00010, T9, LC)
+        #Jump to fetch (not really needed in this instruction since it is a hcf instruction xD)
+        (A0, B= 1, C = 0)
 
     }
 }
